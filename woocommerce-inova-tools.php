@@ -56,13 +56,64 @@ if ( ! class_exists( 'WC_Inova_Tools' ) ) {
 			add_action('admin_notices', function(){settings_errors();});
 			add_action('admin_init', [$this,'wit_register_settings']);
 			add_action('wp_enqueue_scripts', [$this,'wit_load_js_assets'] );
+			//adding extrafield to product data
+			add_action( 'woocommerce_product_options_general_product_data', [$this,'wit_product_options_general_product_data']); 
+			add_action( 'woocommerce_process_product_meta', [$this,'wit_process_product_meta']);
+			//adding extrafield to product data variations
+			add_action( 'woocommerce_variation_options_pricing', [$this,'wit_variation_options_pricing'], 10, 3 );
+			add_action( 'woocommerce_save_product_variation', [$this,'wit_save_product_variation'], 10, 2 );
+			add_filter( 'woocommerce_available_variation', [$this,'wit_available_variation']);
 		}
+
+		/********************** Product funtions ***********************/
+		function wit_product_options_general_product_data(){
+			global $woocommerce, $post;
+			echo '<div class="product_custom_field">';
+			woocommerce_wp_text_input(
+				array(
+					'id' => 'DKS_products_prices_id',
+					'placeholder' => '',
+					'label' => __('Direksys ID products prices', 'woocommerce'),
+					'desc_tip' => 'true'
+				)
+			);
+			echo '</div>';
+		}
+
+		function wit_process_product_meta($post_id){
+			$woocommerceDKS_products_prices_id = $_POST['DKS_products_prices_id'];
+			if (!empty($woocommerceDKS_products_prices_id))
+				update_post_meta($post_id, 'DKS_products_prices_id', esc_attr($woocommerceDKS_products_prices_id));
+		}
+		/********************** END Product funtions ***********************/
+
+		/********************** Product variations funtions ***********************/
+		function wit_save_product_variation( $variation_id, $i ) {
+			$DKS_products_prices_id = $_POST['DKS_products_prices_id'][$i];
+			if ( isset( $DKS_products_prices_id ) ) update_post_meta( $variation_id, 'DKS_products_prices_id', esc_attr( $DKS_products_prices_id ) );
+		}
+
+		function wit_variation_options_pricing( $loop, $variation_data, $variation ) {
+			woocommerce_wp_text_input( array(
+				'id' => 'DKS_products_prices_id[' . $loop . ']',
+				'class' => 'short',
+				'label' => __( 'Direksys ID products prices', 'woocommerce' ),
+				'value' => get_post_meta( $variation->ID, 'DKS_products_prices_id', true )
+			)
+		);
+		}
+
+		function wit_available_variation( $variations ) {
+			$variations['DKS_products_prices_id'] = '<div class="woocommerce_DKS_products_prices_id">Direksys ID products prices: <span>' . get_post_meta( $variations[ 'variation_id' ], 'DKS_products_prices_id', true ) . '</span></div>';
+			return $variations;
+		}
+		/********************** END Product variations funtions ***********************/
 
 		function wit_load_js_assets(){
 			$checkout_page=getFixedCheckOutPageURL();
 			$cart_page=getFixedCartPageURL();
 			if(isset($this->settings['wit_cart_flow']) && array_key_exists('wit_cart_flow_enabled', $this->settings['wit_cart_flow']) && $this->settings['wit_cart_flow']['wit_cart_flow_enabled']=='yes'
-			 && array_key_exists('hide_shipping_when_is_free_enabled', $this->settings['wit_cart_flow']) && $this->settings['wit_cart_flow']['hide_shipping_when_is_free_enabled']=='yes'){
+				&& array_key_exists('hide_shipping_when_is_free_enabled', $this->settings['wit_cart_flow']) && $this->settings['wit_cart_flow']['hide_shipping_when_is_free_enabled']=='yes'){
 				if (is_page($checkout_page)||is_page($cart_page)) {
 					wp_enqueue_script('hide_shipping_when_is_free', $this->plugin_path_url.'assets/js/hide_shipping_when_is_free.js', array( 'jquery' ),false);
 				}
@@ -70,7 +121,7 @@ if ( ! class_exists( 'WC_Inova_Tools' ) ) {
 		} 
 
 		function wit_admin_menu(){
-		    add_menu_page( 'WC Inova Tools', 'WooCommerce Inova Tools', 'administrator', $this->main_page_slug, [$this,'wit_render_main_page'],'/wp-content/plugins/woocommerce-inova-tools/assets/images/logoplug-bw.png');
+			add_menu_page( 'WC Inova Tools', 'WooCommerce Inova Tools', 'administrator', $this->main_page_slug, [$this,'wit_render_main_page'],'/wp-content/plugins/woocommerce-inova-tools/assets/images/logoplug-bw.png');
 			add_submenu_page( $this->main_page_slug, 'Direksys settings', 'Direksys settings', 'administrator', 'wit-settings-direksys', function(){ $this->wit_render_settings_page('wit_dks'); });
 			add_submenu_page( $this->main_page_slug, 'Payment Gateways', 'Payment Gateways', 'administrator', 'wit-settings-payment-gateways', function(){ $this->wit_render_settings_page('wit_payment_gateway',array(
 				'supported_payment_gateways'=>$this->supported_payment_gateways)); });
@@ -78,21 +129,21 @@ if ( ! class_exists( 'WC_Inova_Tools' ) ) {
 		}
 
 		function wit_register_settings(){
-		    foreach ($this->settings as $key => $value) {
-		    	if (method_exists($this, $key.'_settings_validate')) {
+			foreach ($this->settings as $key => $value) {
+				if (method_exists($this, $key.'_settings_validate')) {
 		    		//this will save the option in the wp_options table as {$key.'_settings'} the third parameter is a function that will validate your input values
-		    		register_setting($key.'_settings', $key.'_settings', [$this, $key.'_settings_validate']);
-		    	}
-		    }
+					register_setting($key.'_settings', $key.'_settings', [$this, $key.'_settings_validate']);
+				}
+			}
 		}
 
 		function wit_dks_settings_validate($args){
-		    if(!isset($args['dks_endpoint_create_order']) || !is_valid_url($args['dks_endpoint_create_order'])){
+			if(!isset($args['dks_endpoint_create_order']) || !is_valid_url($args['dks_endpoint_create_order'])){
 		        //add a settings error because the email is invalid and make the form field blank, so that the user can enter again
-		        $args['dks_endpoint_create_order'] = '';
-		    	add_settings_error('wit_dks_settings', 'dks_endpoint_create_order', __('Ingresa una URL válida para el endpoint.'), $type = 'error');   
-		    }
-		    return $args;
+				$args['dks_endpoint_create_order'] = '';
+				add_settings_error('wit_dks_settings', 'dks_endpoint_create_order', __('Ingresa una URL válida para el endpoint.'), $type = 'error');   
+			}
+			return $args;
 		}
 
 		function wit_payment_gateway_settings_validate($args){
@@ -117,13 +168,13 @@ if ( ! class_exists( 'WC_Inova_Tools' ) ) {
 
 		function wit_page_settings_link( $links ) {
 			$links[] = '<a href="' .
-				admin_url( 'admin.php?page='.$this->main_page_slug ) .
-				'">' . __('Settings') . '</a>';
+			admin_url( 'admin.php?page='.$this->main_page_slug ) .
+			'">' . __('Settings') . '</a>';
 			return $links;
 		}
 
 		function wit_render_main_page(){
-        	render_page(dirname(__FILE__).'/includes/admin/main_page.php'); 
+			render_page(dirname(__FILE__).'/includes/admin/main_page.php'); 
 		}
 
 		function wit_woocommerce_payment_complete($order_id){
@@ -133,14 +184,14 @@ if ( ! class_exists( 'WC_Inova_Tools' ) ) {
 		} 
 
 		function write_log($log) {
-	        if (true === WP_DEBUG) {
-	            if (is_array($log) || is_object($log)) {
-	                error_log(print_r($log, true));
-	            } else {
-	                error_log($log);
-	            }
-	        }
-	    }
+			if (true === WP_DEBUG) {
+				if (is_array($log) || is_object($log)) {
+					error_log(print_r($log, true));
+				} else {
+					error_log($log);
+				}
+			}
+		}
 
 		function connect_dks($order_id){
 			$order = wc_get_order($order_id);
@@ -148,14 +199,14 @@ if ( ! class_exists( 'WC_Inova_Tools' ) ) {
 			if (isset($this->settings['wit_dks']['dks_endpoint_create_order'])&&$this->settings['wit_dks']['dks_endpoint_create_order']!=='') {
 				$response = wp_remote_post($this->settings['wit_dks']['dks_endpoint_create_order'], 
 					array(
-					  'method' => 'POST',
-					  'headers' => array('Content-Type' => 'application/json; charset=utf-8'),
-					  'body' =>'{"id":'.$order_id.'}' 
-				  )
+						'method' => 'POST',
+						'headers' => array('Content-Type' => 'application/json; charset=utf-8'),
+						'body' =>'{"id":'.$order_id.'}' 
+					)
 				);
 				if ( is_wp_error( $response ) ) {
-				    $error_message = $response->get_error_message();
-				    $this->write_log('WC DKS Tools:'.$error_message);
+					$error_message = $response->get_error_message();
+					$this->write_log('WC DKS Tools:'.$error_message);
 				}
 			}else{
 				$this->write_log('WC DKS Tools: Endpoin invalid, check configuration.');
