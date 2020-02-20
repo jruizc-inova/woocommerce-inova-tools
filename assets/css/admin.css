@@ -1,0 +1,85 @@
+input[type=date], input[type=datetime-local], input[type=datetime], input[type=email], input[type=month], input[type=number], input[type=password], input[type=search], input[type=tel], input[type=text], input[type=time], input[type=url], input[type=week] {
+    min-width: 400px;
+}
+.col-3 {
+    width: calc(33.3% - 10px);
+    float: left;
+    padding: 5px;
+}
+/*Template page with*/
+.wit-header {
+    background-image: url(/wp-content/plugins/woocommerce-inova-tools/assets/images/inovalogodarkin.png);
+    background-repeat: no-repeat;
+    background-position: center right;
+    background-position-y: 0px;
+    min-height: 70px;
+}
+.wit-header h2 {
+    margin: 0px;
+    margin-bottom: 10px;
+    color: #0073aa;
+}
+.item_read_only {
+    background: #f1f1f1 !important;
+    pointer-events: none;
+    cursor: not-allowed !important;
+    color: #adadad !important;
+    border: 1px solid #d0cece !important;
+}
+
+/*Panels*/
+.wit-panel {
+    width: 100%;
+    overflow: hidden;
+}
+.wit-panel .panel-header {
+    background-color: #d2d2d2;
+    padding: 10px 20px;
+    font-size: 1.1em;
+    font-weight: 600;
+    overflow: hidden;
+}
+
+.wit-panel .panel-body {
+    background-color: #fdfdfd;
+    overflow: hidden;
+    padding: 10px 20px;
+    margin-bottom: 10px;
+    border: 1px solid #d2d2d2;
+}
+/*alerts*/
+.alert.alert-info {
+    padding: 10px;
+}
+.alert .title {
+    margin: 0px;
+    margin-bottom: 10px;
+}
+.alert .message {
+    font-size: 12px;
+    margin: 0px;
+    padding: 0px;
+}
+.alert li {
+    list-style: circle;
+     margin: 0px;
+}
+.alert ul {
+    padding-left: 40px;
+    margin: 0px;
+    margin-top: 10px;
+}
+
+.alert.alert-info {
+    background: #c7ecff;
+    color: #1476a9;
+    border: 1px dashed;
+}
+.alert.alert-info .title{
+    color: #1476a9;
+}
+.alert .message p {
+    font-size: 12px;
+    margin: 0px;
+    margin-bottom: 10px;
+}
